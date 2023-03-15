@@ -24,7 +24,13 @@ class StoreBookRequest extends FormRequest
     public function rules()
     {
         return [
-            //
+            'title'=>'required',
+            'content'=>'required',
+            'description'=>'required',
+            'download_link'=>'required',
+            'category_id'=>'required',
+            'category_id' => 'exists:categories,id',
+            'image'=>'required',
         ];
     }
 }

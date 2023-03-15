@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\BookResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class BookCollection extends ResourceCollection
@@ -12,8 +13,12 @@ class BookCollection extends ResourceCollection
      * @param  \Illuminate\Http\Request  $request
      * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
      */
+    public $collects = BookResource::class;
+
     public function toArray($request)
     {
-        return parent::toArray($request);
+        return [
+            'data' => $this->collection,
+        ];
     }
 }
