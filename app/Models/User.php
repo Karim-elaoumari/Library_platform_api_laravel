@@ -1,7 +1,11 @@
 <?php
 namespace App\Models;
 use App\Models\Book;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -20,12 +24,12 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'email_verified_at',
     ];
     public function books()
     {
         return $this->hasMany(Book::class);
     }
-
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -63,6 +67,19 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+    public function sendConfirmationEmail()
+    {
+        $this->confirmation_code = Str::random(30);
+        $this->save();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(10),
+            ['id' => $this->id, 'hash' => sha1($this->confirmation_code)]
+        );
+
+        $this->notify(new VerifyEmail($verificationUrl));
     }
 
 }

@@ -18,10 +18,12 @@ return new class extends Migration
             $table->string('title');
             $table->string('image');
             $table->longText('description');
-            $table->longText('Donwnload_link');
+            $table->string('location');
+            $table->longText('download_link');
             $table->longText('content');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreignId('status_id')->constrained('statuses')->onDelete('cascade')->onUpdate('cascade');
             $table->timestamps();
         });
     }

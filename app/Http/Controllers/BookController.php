@@ -7,6 +7,7 @@ use App\Http\Resources\BookResource;
 use App\Http\Resources\BookCollection;
 use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class BookController extends Controller
 {
@@ -19,9 +20,8 @@ class BookController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:sanctum')->only(['store','update','destroy']);
-        $this->middleware('IsAuthor')->only(['store']);
-        $this->middleware('isAdminAuthor')->only(['update','destroy']);
+        $this->middleware('JwtAuth', ['only' => ['update','store','destroy']]);
+        $this->middleware('permission:add_book', ['only' => ['store']]);
     }
     /**
      * Display a listing of the resource.
@@ -30,8 +30,15 @@ class BookController extends Controller
      */
     public function index()
     {
+    //    $this->middleware('permission:edit_role_of_user');
        $books =  Book::with('category','user')->latest()->get();
        return  new BookCollection($books);
+    }
+    public function ownBooks(){
+        $user = JWTAuth::user();
+        $books =  Book::with('category','user')->where('user_id',$user->id)->latest()->get();
+        return  new BookCollection($books);
+
     }
     /**
      * Show the form for creating a new resource.
@@ -49,6 +56,7 @@ class BookController extends Controller
      */
     public function store(StoreBookRequest $request)
     {
+        $user = JWTAuth::user();
         $image = $request->file('image');
         $image_name = time().'.'.$image->getClientOriginalExtension();
         $destinationPath = public_path('/images');
@@ -60,8 +68,10 @@ class BookController extends Controller
             'content'=>$request->content,
             'image'=>$image_name,
             'category_id'=>$request->category_id,
-            'user_id'=>1,  
-            // Auth::user()->id
+            'status_id'=>$request->status_id,
+            'location'=>$request->location,
+            'user_id'=>$user->id,  
+            
         ]);
         return new BookResource($book);
     }
@@ -74,7 +84,7 @@ class BookController extends Controller
     public function show(Book $book)
     {
         $book =  Book::with('category','user')->where('id',$book->id)->get();
-        return  new BookCollection($book);
+        return  new BookResource($book);
     }
     /**
      * Show the form for editing the specified resource.
@@ -95,10 +105,13 @@ class BookController extends Controller
      */
     public function update(UpdateBookRequest $request, Book $book)
     {
-        // if($book->user_id!=1 && Auth::user()->role->name!="admin"){
-        //     return  response()->json(["error"=>'You Dont have permission to make action on it'], 404);
-        // }
-        if ($request->hasFile('image')) {
+        $user = JWTAuth::user();
+        $hisOwn =false;
+        if($book->user_id==$user->id && $user->hasDirectPermission('edit_own_book')) $hisOwn = true;
+        if(!$hisOwn && !$user->hasDirectPermission('edit_book')){
+            return  response()->json(["error"=>'You Dont have permission to make action on this book'], 404);
+        }
+        if ($request->hasFile('image')){
             // delete old image
             $oldImage = public_path('images/').$book->image;
             if (file_exists($oldImage)) {
@@ -115,6 +128,9 @@ class BookController extends Controller
         $book->download_link = $request->download_link;
         $book->content = $request->content;
         $book->category_id = $request->category_id;
+        $book->status_id = $request->status_id;
+        $book->location = $request->location;
+       
         $book->update();
         return new BookResource($book); 
     }
@@ -127,9 +143,12 @@ class BookController extends Controller
      */
     public function destroy(Book $book)
     {  
-        // if($book->user_id!=1 && Auth::user()->role->name!="admin"){
-        //     return  response()->json(["error"=>'You Dont have permission to make action on this book'], 404);
-        // }
+        $user = JWTAuth::user();
+        $hisOwn =false;
+        if($book->user_id==$user->id && $user->hasDirectPermission('edit_own_book')) $hisOwn = true;
+        if(!$hisOwn && !$user->hasDirectPermission('edit_book')){
+            return  response()->json(["error"=>'You Dont have permission to make action on this book'], 404);
+        }
         $book = Book::find($book->id)->where('user_id',1);
         $book->delete();
         return  response()->json(['success'=>'book deleted successufuly']);

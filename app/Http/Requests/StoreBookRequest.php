@@ -30,6 +30,9 @@ class StoreBookRequest extends FormRequest
             'download_link'=>'required',
             'category_id'=>'required',
             'category_id' => 'exists:categories,id',
+            'status_id'=>'required',
+            'status_id' => 'exists:statuses,id',
+            'location'=> 'required|min:6',
             'image'=>'required',
         ];
     }
