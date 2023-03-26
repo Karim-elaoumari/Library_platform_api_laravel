@@ -5,10 +5,12 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\UserResource;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Resources\RoleCollection;
 use Illuminate\Auth\Events\Registered;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -16,7 +18,7 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('JwtAuth', ['only' => ['refresh']]);
+        $this->middleware('JwtAuth', ['only' => ['logout']]);
     }
     public function login(Request $request)
     {
@@ -29,14 +31,14 @@ class AuthController extends Controller
         if (!$token) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized',
+                'message' => 'Email or passsword incorrect',
             ], 401);
         }
 
         $user = JWTAuth::user();
         return response()->json([
                 'status' => 'success',
-                'user' => $user,
+                'user' =>new UserResource($user),
                 'authorisation' => [
                     'token' => $token,
                     'type' => 'bearer',
@@ -58,6 +60,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
         $user->save();
+        $user->assignRole('user');
         event(new Registered($user));
 
         $user->sendConfirmationEmail();
@@ -82,7 +85,11 @@ class AuthController extends Controller
         ]);
         if($exist){
             $user = User::where('email', $request->email)->first();
-            $this->checkIfEmailVerified($user);
+            if($this->checkIfEmailVerified($user)){
+               return  response()->json([
+                    'message' => 'Go verify your email first, we emailed you with confirmation link'
+                ],201);
+            }
             $token = Str::random(64);
             $insert = DB::table('password_resets')->insert([
                 'email' => $request->email,
@@ -120,7 +127,7 @@ class AuthController extends Controller
 
         if(!$validateToken){
             return response()->json([
-                'Error' => 'Invalid Token'
+                'Error' => 'Invalid Token of reset re reset your password'
             ]);
         }
         $created_at = Carbon::parse($validateToken->created_at);
@@ -135,7 +142,6 @@ class AuthController extends Controller
         ->update(['password' => Hash::make($request->password)]);
         if($user){
             DB::table('password_resets')->where(['email'=> $request->email])->delete();
-            JWTAuth::invalidate(JWTAuth::getToken());
             return response()->json([
                 'Success' => 'password updated successfully'
             ]);
@@ -170,9 +176,7 @@ class AuthController extends Controller
     public function checkIfEmailVerified($user){
         if($user->email_verified_at == NULL){
             $user->sendConfirmationEmail();
-            return response()->json([
-                'Error' => 'Go verify your email first, we emailed you with confirmation link'
-            ]);
+            return true;
         }
     }
 

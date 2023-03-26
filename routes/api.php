@@ -39,9 +39,12 @@ Route::apiResource('roles', RoleController::class);
 
 Route::controller(UserController::class)->group(function () {
     Route::get('user','user');
+    Route::get('users','users');
     Route::put('user/updatePassword','updatePassword');
     Route::put('user/updateName','updateName');
     Route::put('user/updateEmail','updateEmail');
+    Route::put('user/update_user_role','updateUserRole');
+    
 
 })->middleware('JwtAuth');
 

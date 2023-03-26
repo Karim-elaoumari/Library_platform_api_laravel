@@ -16,9 +16,18 @@ class RoleController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    public function __construct()
+    {
+        $this->middleware('JwtAuth');
+        $this->middleware('permission:add_role', ['only' => ['store']]);
+        $this->middleware('permission:edit_role', ['only' => ['update']]);
+        $this->middleware('permission:delete_role', ['only' => ['destroy']]);
+    }
+
     public function index()
     {
-        //
+        $roles = Role::all();
+        return new RoleCollection($roles);
     }
 
     /**
@@ -28,7 +37,7 @@ class RoleController extends Controller
      */
     public function create()
     {
-        //
+        
     }
 
     /**
@@ -60,9 +69,10 @@ class RoleController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($name)
     {
-        //
+        $role = Role::where('name',$name)->get();
+        return new RoleResource($role);
     }
 
     /**
@@ -87,19 +97,13 @@ class RoleController extends Controller
     {
         $permissions = $request->input('permissions',[]);
         $role = $role = Role::findByName($name);
-        $lastPermissions = $role->permissions;
-        
-        
-
         try{
-            
             $role->name = $request->name;
             $role->save();
             $role->syncPermissions($permissions);
             return response()->json(['message',"role updated successfully"], 201);
         }
         catch(\Exception $e){
-            $role->syncPermissions($lastPermissions);
             return response()->json(['message',$e->getMessage()], 401);
         }
     }

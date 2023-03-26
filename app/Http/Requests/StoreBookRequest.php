@@ -13,7 +13,7 @@ class StoreBookRequest extends FormRequest
      */
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,14 +24,12 @@ class StoreBookRequest extends FormRequest
     public function rules()
     {
         return [
-            'title'=>'required',
-            'content'=>'required',
-            'description'=>'required',
+            'title'       =>'required',
+            'content'     =>'required',
+            'description' =>'required',
             'download_link'=>'required',
-            'category_id'=>'required',
-            'category_id' => 'exists:categories,id',
-            'status_id'=>'required',
-            'status_id' => 'exists:statuses,id',
+            'category_id'  =>  'required|exists:categories,id',
+            'status_id'=>'required|exists:statuses,id',
             'location'=> 'required|min:6',
             'image'=>'required',
         ];

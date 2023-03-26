@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\CategoryCollection;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 
@@ -29,7 +31,7 @@ class CategoryController extends Controller
     public function index()
     {
     //    $this->middleware('permission:edit_role_of_user');
-       $categories =  Category::with('books')->latest()->get();
+       $categories =  Category::latest()->get();
        return  new CategoryCollection($categories);
     }
     
@@ -63,7 +65,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        $category =  Category::with('books')->where('id',$category->id)->get();
+        $category =  Category::findOrFail($category->id);
         return  new CategoryResource($category);
     }
     /**

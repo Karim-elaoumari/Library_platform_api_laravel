@@ -18,7 +18,7 @@ class BookCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            'data' => $this->collection,
+            'Books' => $this->collection,
         ];
     }
 }

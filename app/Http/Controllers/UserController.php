@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\UserCollection;
@@ -9,7 +10,13 @@ use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
-    public function updatePassword(request $request){ 
+
+    public function __construct()
+    {
+        $this->middleware('JwtAuth');
+        $this->middleware('permission:edit_role_of_user', ['only' => ['updateUserRole']]);
+    }
+    public function updatePassword(request $request){
         $user = JWTAuth::user();
         $request->validate([
             'lastPassword'=>['required','min:8',function ($attribute, $value, $fail) {
@@ -56,9 +63,7 @@ class UserController extends Controller
         return new UserResource($user);
     }
     public function users(){
-        $users = User::whereDoesntHave('role', function($query) {
-            $query->where('name', 'admin');
-        })->get();
+        $users = User::with('roles')->get();
         return new UserCollection($users);
     }
     public function showOneUser($id){
@@ -70,11 +75,11 @@ class UserController extends Controller
             'user_id' =>'required|exists:users,id',
             'newRole'=>'required|exists:roles,name',
         ]);
-        $user  = User::findOrFail($request->user_id);
-        $user->assignRole('newRole');
+        $user  = User::with('roles')->findOrFail($request->user_id);
+        $user->syncRoles($request->newRole);
         return  response()->json([
-            'success'=>' Email edited successfully',
-            'user'=> new UserResource($user)]);
+            'success'=>'User Role updated successfully',
+            'user'=> new UserResource($user)],202);
 
     }
 

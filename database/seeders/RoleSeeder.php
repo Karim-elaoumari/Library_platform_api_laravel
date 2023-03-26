@@ -20,15 +20,13 @@ class RoleSeeder extends Seeder
 
 
         Permission::create(['name' => 'add_book']);
-        Permission::create(['name' => 'edit_book']);
-        Permission::create(['name' => 'delete_book']);
-
-
         
         Permission::create(['name' => 'show_own_books']);
         Permission::create(['name' => 'edit_own_book']);
         Permission::create(['name' => 'delete_own_book']);
-        Permission::create(['name' => 'filter_own_by_category']);
+
+        Permission::create(['name' => 'edit_all_books']);
+        Permission::create(['name' => 'delete_all_books']);
 
         Permission::create(['name' => 'add_category']);
         Permission::create(['name' => 'edit_category']);
@@ -42,13 +40,13 @@ class RoleSeeder extends Seeder
 
 
 
-        Role::create(['name' => 'user'])
-            ->givePermissionTo(['show_books','show_categories' ,'filter_by_category']);
+        Role::create(['name' => 'user']);
+           
 
         Role::create(['name' => 'publisher'])
-            ->givePermissionTo(['show_categories','add_book', 'edit_own_book','show_own_books','delete_own_book' ,'filter_own_by_category']);
+            ->givePermissionTo(['show_categories','add_book' ,'show_books', 'edit_own_book','show_own_books','delete_own_book']);
 
         Role::create(['name' => 'admin'])
-            ->givePermissionTo(['show_books','show_categories' ,'filter_by_category','edit_category','delete_category','add_role','edit_role','delete_role','edit_role_of_user']);
+            ->givePermissionTo(['show_books','add_category','show_categories','edit_all_books','delete_all_books' ,'edit_category','show_categories','delete_category','add_role','edit_role','delete_role','edit_role_of_user']);
     }
 }
