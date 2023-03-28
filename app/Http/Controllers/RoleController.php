@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use App\Http\Resources\RoleResource;
+use App\Http\Resources\RoleCollection;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use Spatie\Permission\Contracts\Permission;
@@ -26,7 +29,7 @@ class RoleController extends Controller
 
     public function index()
     {
-        $roles = Role::all();
+        $roles = Role::with('permissions')->get();
         return new RoleCollection($roles);
     }
 
@@ -71,7 +74,7 @@ class RoleController extends Controller
      */
     public function show($name)
     {
-        $role = Role::where('name',$name)->get();
+        $role = Role::where('name',$name)->first();
         return new RoleResource($role);
     }
 
@@ -101,9 +104,9 @@ class RoleController extends Controller
             $role->name = $request->name;
             $role->save();
             $role->syncPermissions($permissions);
-            return response()->json(['message',"role updated successfully"], 201);
+            return new RoleResource($role);
         }
-        catch(\Exception $e){
+        catch(Exception $e){
             return response()->json(['message',$e->getMessage()], 401);
         }
     }

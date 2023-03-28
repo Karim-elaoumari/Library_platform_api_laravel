@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\UserCollection;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -15,13 +16,14 @@ class UserController extends Controller
     {
         $this->middleware('JwtAuth');
         $this->middleware('permission:edit_role_of_user', ['only' => ['updateUserRole']]);
+        $this->middleware('permission:edit_role_of_user', ['only' => ['users']]);
     }
     public function updatePassword(request $request){
         $user = JWTAuth::user();
         $request->validate([
-            'lastPassword'=>['required','min:8',function ($attribute, $value, $fail) {
+            'lastPassword'=>['required','min:8',function ($attribute, $value, $fail) use ($user) {
                 if (!Hash::check($value, $user->password)) {
-                    $fail(__('The :last Password is incorrect.'));
+                    $fail(__('The last Password is incorrect.'));
                 }
             }],
             'newPassword'=> 'required|min:8',
@@ -46,7 +48,7 @@ class UserController extends Controller
     }
     public function updateEmail(request $request){
         $request->validate([
-            'email'=>'required',
+            'email'=>'required|unique:users,email',
         ]);
         $user = JWTAuth::user();
         $user->email= $request->email;
@@ -55,7 +57,7 @@ class UserController extends Controller
         // user still can use the app but when it's logout and try to login he most verify email again 
         $user->sendConfirmationEmail();
         return  response()->json([
-            'success'=>' Email edited successfully',
+            'success'=>' Email edited successfully you still have to verify your new email check your Email Box',
             'user'=> new UserResource($user)]);
     } 
     public function user(){

@@ -155,4 +155,9 @@ class BookController extends Controller
         $book->delete();
         return  response()->json(['success'=>'book deleted successufuly']);
     }
+    public function filterByCategory($categoryId)
+{
+    $books = Book::where('category_id', $categoryId)->get();
+    return new BookCollection($books);
+}
 }
